@@ -1,6 +1,43 @@
-import { CODES,personas,resultTitle,type SavedResult } from '@/lib/quiz';
+import {personas,type SavedResult} from '@/lib/quiz';
 import {Vehicle} from './Vehicle';
+
 export default function ResultCard({saved,qr}:{saved:SavedResult;qr:string}){
- const r=saved.result;const primary=personas[r.leaders[0]];const combo=r.kind!=='single';
- return <article className="result-card" id="result-card"><div className="result-card-top"><span className="brand-word">ZEEKR<span className="brand-dot">•</span></span><span>PERSONALITY / 01</span></div><div className="result-hero" style={{'--persona-color':primary.color} as React.CSSProperties}><div className="result-eyebrow">你的极氪人格 · {r.kind==='single'?'个人配置已解锁':r.kind==='dual'?'双倾向配置已解锁':'多面配置已解锁'}</div><div className="result-models">{r.leaders.map(c=>personas[c].model).join(' × ')}</div>{combo?<div className="vehicle-fleet">{r.leaders.map(code=><Vehicle key={code} code={code} entrance/>)}</div>:<Vehicle code={r.leaders[0]} entrance/>}<h1>{resultTitle(r)}</h1><p className="result-quote">{combo?'你有不止一种启动方式。':primary.quote}</p><div className="tags">{r.leaders.map(c=>personas[c].tags[0]).concat(r.kind==='single'?primary.tags.slice(1):[]).map(tag=><span key={tag}>#{tag}</span>)}</div></div><div className="result-body">{combo?<div className="combo-intro"><p>这次作答中，{r.leaders.map(c=>personas[c].label).join('、')}呈现出接近的倾向。你可能会根据情境切换参与方式，每一面都值得被看见。</p></div>:null}{r.leaders.map((code,i)=>{const p=personas[code];return <section className="analysis-block" key={code}><div className="section-kicker">{String(i+1).padStart(2,'0')} / {combo?`极氪 ${p.model} · ${p.title}`:'生活里的你'}</div>{combo?<><Vehicle code={code}/><h2>{p.quote}</h2></>:null}<p>{p.description}</p><div className="contrast"><span>小小反差</span><p>{p.contrast}</p></div></section>;})}{r.secondary.length?<section className="analysis-block"><div className="section-kicker">隐藏配置 / ANOTHER SIDE</div>{r.secondary.length>2?<><h2>其他倾向，也有探索空间</h2><p>你的其他倾向中有多项并列，这次暂不指定一个副人格。具体选择分布可以在下方查看。</p></>:<><h2>{r.secondary.map(c=>`${personas[c].model}式${personas[c].label}`).join(' · ')}</h2><p>除了{primary.label}，你也多次选择了与{r.secondary.map(c=>personas[c].label).join('、')}有关的反应。这是你的另一种参与方式。</p></>}</section>:null}<section className="analysis-block"><div className="section-kicker">日常彩蛋 / THAT'S SO YOU</div><div className="bonus-tags">{r.bonus.map(t=><span key={t}>✳ #{t}</span>)}</div></section><section className="distribution"><div className="section-kicker">本次选择分布 / YOUR SIGNALS</div>{CODES.map(code=><div className="signal-row" key={code}><span>{personas[code].label}</span><div className="signal-track"><div style={{width:`${r.scores[code]/16*100}%`,background:personas[code].color}}/></div><b>{r.scores[code]} 次</b></div>)}<p className="distribution-note">28道倾向题的选择次数，不代表能力高低；另有2道彩蛋题。</p></section><section className="partner-block"><div className="section-kicker">搭档线索 / TO BE CONTINUED</div>{r.leaders.map(code=><p key={code}>{combo?<strong>{personas[code].model}的你：</strong>:null}{personas[code].partner}</p>)}<div className="partner-foot">你的队伍，训练营见。<span>↗</span></div></section><div className="result-foot"><div><b>每一种你，都有自己的光。</b><p>极氪 KOC 创作训练营<br/>扫码查看这份人格结果</p></div>{qr?<img src={qr} alt="查看此结果的二维码" width="84" height="84"/>:<div className="qr-placeholder"/>}</div><p className="result-disclaimer">本测评呈现本次作答的相对倾向，仅用于活动交流与组队参考。车型人格为创意设定，不是心理诊断或能力评级。分享结果不展示真实姓名。</p><div className="result-serial"><span>CONFIGURATION / {saved.id.slice(0,8).toUpperCase()}</span><span>{new Date(saved.createdAt).toLocaleDateString('zh-CN',{timeZone:'Asia/Shanghai'})}</span></div></div></article>;
+ const r=saved.result;
+ // Leaders are ranked by score; exact ties keep the existing stable code order.
+ // Only presentation is reduced to one persona. Stored scores remain intact for operators.
+ const primaryCode=r.leaders[0];
+ const primary=personas[primaryCode];
+ return <article className="result-card" id="result-card">
+  <div className="result-card-top"><span className="brand-word">ZEEKR<span className="brand-dot">•</span></span><span>PERSONALITY / 01</span></div>
+  <div className="result-hero" style={{'--persona-color':primary.color} as React.CSSProperties}>
+   <div className="result-eyebrow">你的极氪人格 · 已解锁</div>
+   <div className="result-models">{primary.model}</div>
+   <Vehicle code={primaryCode} entrance/>
+   <h1>{primary.title}</h1>
+   <p className="result-quote">{primary.quote}</p>
+   <div className="tags">{primary.tags.map(tag=><span key={tag}>#{tag}</span>)}</div>
+  </div>
+  <div className="result-body">
+   <section className="analysis-block">
+    <div className="section-kicker">01 / 生活里的你</div>
+    <p>{primary.description}</p>
+    <div className="contrast"><span>小小反差</span><p>{primary.contrast}</p></div>
+   </section>
+   <section className="analysis-block">
+    <div className="section-kicker">日常彩蛋 / THAT'S SO YOU</div>
+    <div className="bonus-tags">{r.bonus.map(t=><span key={t}>✳ #{t}</span>)}</div>
+   </section>
+   <section className="partner-block">
+    <div className="section-kicker">搭档线索 / TO BE CONTINUED</div>
+    <p>{primary.partner}</p>
+    <div className="partner-foot">你的队伍，训练营见。<span>↗</span></div>
+   </section>
+   <div className="result-foot">
+    <div><b>每一种你，都有自己的光。</b><p>极氪 KOC 创作训练营<br/>扫码查看这份人格结果</p></div>
+    {qr?<img src={qr} alt="查看此结果的二维码" width="84" height="84"/>:<div className="qr-placeholder"/>}
+   </div>
+   <p className="result-disclaimer">本测评呈现本次作答的相对倾向，仅用于活动交流与组队参考。车型人格为创意设定，不是心理诊断或能力评级。分享结果不展示真实姓名。</p>
+   <div className="result-serial"><span>CONFIGURATION / {saved.id.slice(0,8).toUpperCase()}</span><span>{new Date(saved.createdAt).toLocaleDateString('zh-CN',{timeZone:'Asia/Shanghai'})}</span></div>
+  </div>
+ </article>;
 }
