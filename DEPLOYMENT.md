@@ -31,7 +31,7 @@ GitHub 仓库 Variables 配置 `VITE_SUPABASE_URL` 和 `VITE_SUPABASE_PUBLISHABL
 ## 后端配置
 
 1. 建立专用 Supabase 项目。新账号/新组织需由运营确认；不要复用未知项目。
-2. 应用 `supabase/migrations/20261013121227_quiz_initial.sql`。
+2. 应用 `supabase/migrations/20261013125133_quiz_initial.sql`。
 3. `npm run build` 会同步唯一题库 `lib/quiz.ts` 到 Edge Function 的 `_shared/quiz.ts`。
 4. 部署 `supabase/functions/quiz-api`，`verify_jwt=false`；函数自身校验参与者随机会话与管理员 Supabase Auth JWT。公开读取结果仅返回结果内容，所有管理接口逐次校验管理员表。
 5. 所有表启用 RLS，anon/authenticated 没有直接读表、写表或执行内部 RPC 的权限；仅 Edge Function 的服务端角色访问。
@@ -48,6 +48,9 @@ GitHub 仓库 Variables 配置 `VITE_SUPABASE_URL` 和 `VITE_SUPABASE_PUBLISHABL
 - `node --test tests/core.test.mjs tests/teams.test.mjs tests/database.test.mjs`：问卷配平、计分、分组、CSV安全、真实 Postgres 内核本地SQL权限与事务规则。
 - `tests/frontend.test.mjs`：使用明确标记的受控 API 测试数据验证浏览器行为；不能代替云端验证。要求测试构建使用 `https://quiz-test.supabase.co` 和测试公开key，预览端口5174。
 - 云端必须另外验证：实际数据库权限、真实 Edge Function、访客匿名结果、姓名次数限制、后台登录与保存、GitHub Pages完整访问链路。
+- 2026-10-13 云端实测：匿名读表与后台访问被拒绝；管理员登录、一次性激活、进度、服务端计分、重复请求幂等、并发三次限制、姓名归一化、分组保存和版本冲突均通过。已认证但未授权的账号返回403。
+- 正式 GitHub Pages 浏览器实测：自动下一题、返回与刷新续答、提交、匿名分享及刷新、车图、复制链接、1074×5550 PNG导出、再测一次、后台保存后重读与CSV导出均通过。320 / 390 / 768 / 1440宽度无横向溢出，浏览器无JS异常。仅验证当前网络环境，不代表所有地区或微信内置浏览器都可用。
+- 上线迁入1名参与者、1份旧结果，姓名归一化键、结果UUID、答案、分数与创建时间逐项一致；联调创建的参与者、结果、会话及测试管理员已清理。验证截图和原始报告位于忽略的本地 `outputs/`，不作为正式参与数据发布。
 - 车图为懂车帝原生透明 PNG，来源、下载地址、SHA256记录在 `public/cars/sources.json`，保留原图水印。
 - Supabase 数据库检查仅提示「启用RLS但无策略」和新索引未使用。前者为此架构的预期拒绝访问规则，所有读取经服务端授权接口；[官方说明](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)。新项目的索引使用统计暂不足以判断是否删除；[官方说明](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index)。
 

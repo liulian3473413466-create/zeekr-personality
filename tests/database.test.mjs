@@ -7,7 +7,7 @@ test('数据库权限、三次上限、幂等、组队人数与并发编辑版�
  const db=new PGlite();
  try{
  await db.exec('create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key);');
- await db.exec(readFileSync('supabase/migrations/20261013121227_quiz_initial.sql','utf8'));
+ await db.exec(readFileSync('supabase/migrations/20261013125133_quiz_initial.sql','utf8'));
  const rights=await db.query("select has_table_privilege('anon','public.quiz_results','select') as can_read,has_function_privilege('authenticated','public.quiz_submit(text,uuid,jsonb,jsonb)','execute') as can_submit");
  assert.equal(rights.rows[0].can_read,false);assert.equal(rights.rows[0].can_submit,false);
  const start=async(key,token)=> (await db.query('select public.quiz_start($1,$2,$3) as data',[key,'测试参与者',token])).rows[0].data;
