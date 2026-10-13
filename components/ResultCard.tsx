@@ -1,7 +1,7 @@
 import {personas,type SavedResult} from '@/lib/quiz';
 import {Vehicle} from './Vehicle';
 
-export default function ResultCard({saved,qr}:{saved:SavedResult;qr:string}){
+export default function ResultCard({saved,qr,onVehicleReady,onVehicleError}:{saved:SavedResult;qr:string;onVehicleReady?:()=>void;onVehicleError?:()=>void}){
  const r=saved.result;
  // Leaders are ranked by score; exact ties keep the existing stable code order.
  // Only presentation is reduced to one persona. Stored scores remain intact for operators.
@@ -12,7 +12,7 @@ export default function ResultCard({saved,qr}:{saved:SavedResult;qr:string}){
   <div className="result-hero" style={{'--persona-color':primary.color} as React.CSSProperties}>
    <div className="result-eyebrow">你的极氪人格 · 已解锁</div>
    <div className="result-models">{primary.model}</div>
-   <Vehicle code={primaryCode} entrance/>
+   <Vehicle code={primaryCode} entrance onReady={onVehicleReady} onError={onVehicleError}/>
    <h1>{primary.title}</h1>
    <p className="result-quote">{primary.quote}</p>
    <div className="tags">{primary.tags.map(tag=><span key={tag}>#{tag}</span>)}</div>
