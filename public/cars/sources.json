@@ -1,0 +1,149 @@
+{
+  "version": "1.1",
+  "retrievedAt": "2026-10-13T12:14:08.428Z",
+  "assetType": "原生透明背景实车车型图",
+  "processing": "直接使用懂车帝 CDN 提供的 960px PNG；未通过生成模型重画、未修改车身、未移除懂车帝车牌水印。",
+  "usageNote": "车型人格展示插图；不标注或推断具体年款、配置。图片来源不等同于另行取得商业版权授权。",
+  "assets": [
+    {
+      "code": "001",
+      "file": "/cars/001.png",
+      "source": "懂车帝",
+      "sourcePage": "https://www.dongchedi.com/auto/library-brand/426-1",
+      "modelPage": "https://www.dongchedi.com/auto/series/5015",
+      "observedImageUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/3bb9bb91c4594ae987119c1754a89f75~332x0.png",
+      "downloadUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/3bb9bb91c4594ae987119c1754a89f75~960x0.png",
+      "description": "懂车帝极氪品牌页轿车分类中「ZEEKR 001」对应的原生透明车系图",
+      "width": 960,
+      "height": 640,
+      "bytes": 413103,
+      "sha256": "676accbc1bf48f4492c3d073e744d0de96ec4572b81143e5a0425dcf5ac52fe0",
+      "transparent": true,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visualChecked": true
+    },
+    {
+      "code": "007",
+      "file": "/cars/007.png",
+      "source": "懂车帝",
+      "sourcePage": "https://www.dongchedi.com/auto/library-brand/426-1",
+      "modelPage": "https://www.dongchedi.com/auto/series/9128",
+      "observedImageUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/1c48f95229f4447f99ce1aff744e1f6b~332x0.png",
+      "downloadUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/1c48f95229f4447f99ce1aff744e1f6b~960x0.png",
+      "description": "懂车帝极氪品牌页轿车分类中「ZEEKR 007」对应的原生透明车系图；保留原图轮廓与地面阴影",
+      "width": 960,
+      "height": 640,
+      "bytes": 406829,
+      "sha256": "6d90b85a00abea2af26b007857cb43b154c52c0eee581bce0b787eb4ed85ea4e",
+      "transparent": true,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visualChecked": true
+    },
+    {
+      "code": "007GT",
+      "file": "/cars/007gt.png",
+      "source": "懂车帝",
+      "sourcePage": "https://www.dongchedi.com/auto/library-brand/426-1",
+      "modelPage": "https://www.dongchedi.com/auto/series/25172",
+      "observedImageUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/138c8bd969f947a899b170fdbfde93dd~332x0.png",
+      "downloadUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/138c8bd969f947a899b170fdbfde93dd~960x0.png",
+      "description": "懂车帝极氪品牌页轿车分类中「ZEEKR 007GT」对应的原生透明车系图",
+      "width": 960,
+      "height": 640,
+      "bytes": 412810,
+      "sha256": "b468b8b92263da3f3bbaa2cd5054317ae9a419de0f71cb6f29d5349d3801b43b",
+      "transparent": true,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visualChecked": true
+    },
+    {
+      "code": "7X",
+      "file": "/cars/7x.png",
+      "source": "懂车帝",
+      "sourcePage": "https://www.dongchedi.com/auto/library-brand/426-2",
+      "modelPage": "https://www.dongchedi.com/auto/series/9778",
+      "observedImageUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/5c1bfaaf6b9d448294c69698ce7cde5a~332x0.png",
+      "downloadUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/5c1bfaaf6b9d448294c69698ce7cde5a~960x0.png",
+      "description": "懂车帝极氪品牌页SUV分类中「ZEEKR 7X」对应的原生透明车系图",
+      "width": 960,
+      "height": 640,
+      "bytes": 470303,
+      "sha256": "cae301018f240e36c2308abca8bcca5a98bd98be9592e14ef869424406e48e14",
+      "transparent": true,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visualChecked": true
+    },
+    {
+      "code": "8X",
+      "file": "/cars/8x.png",
+      "source": "懂车帝",
+      "sourcePage": "https://www.dongchedi.com/auto/library-brand/426-2",
+      "modelPage": "https://www.dongchedi.com/auto/series/25555",
+      "observedImageUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/0c80ca14584f41119a8904a0045fc2af~332x0.png",
+      "downloadUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/0c80ca14584f41119a8904a0045fc2af~960x0.png",
+      "description": "懂车帝极氪品牌页SUV分类中「ZEEKR 8X」对应的原生透明车系图",
+      "width": 960,
+      "height": 640,
+      "bytes": 546600,
+      "sha256": "d2770bc452f34ccc6e29810a5def4e60ed57a037c4fb61d38aef2a194bad63a7",
+      "transparent": true,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visualChecked": true
+    },
+    {
+      "code": "009",
+      "file": "/cars/009.png",
+      "source": "懂车帝",
+      "sourcePage": "https://www.dongchedi.com/tag/model/12410552",
+      "modelPage": "https://www.dongchedi.com/auto/series/5878",
+      "observedImageUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/ff38fe497faf47a5bfeec1a95272f0ed~524x0.png",
+      "downloadUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/ff38fe497faf47a5bfeec1a95272f0ed~960x0.png",
+      "description": "懂车帝「极氪009 悬架高低」车型信息页中明确标注「ZEEKR 009」的原生透明车系图",
+      "width": 960,
+      "height": 640,
+      "bytes": 530129,
+      "sha256": "8028c038224733ab10703a371ab6b6c8d3e3e5db2c7c6fafbaed7133a531faa6",
+      "transparent": true,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visualChecked": true
+    },
+    {
+      "code": "9X",
+      "file": "/cars/9x.png",
+      "source": "懂车帝",
+      "sourcePage": "https://www.dongchedi.com/auto/library-brand/426-2",
+      "modelPage": "https://www.dongchedi.com/auto/series/24670",
+      "observedImageUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/aa455b63a7a54255ad80d02ec31a7c1c~332x0.png",
+      "downloadUrl": "https://p3.dcarimg.com/img/tos-cn-i-dcdx/aa455b63a7a54255ad80d02ec31a7c1c~960x0.png",
+      "description": "懂车帝极氪品牌页SUV分类中「ZEEKR 9X」对应的原生透明车系图",
+      "width": 960,
+      "height": 640,
+      "bytes": 513756,
+      "sha256": "b7ee203a3e7fd4e092e513b73b6aa1c949b0d7f6e034ef7645311904c4aa1326",
+      "transparent": true,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visualChecked": true
+    }
+  ]
+}
