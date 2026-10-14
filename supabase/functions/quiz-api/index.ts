@@ -19,7 +19,7 @@ Deno.serve(async(req:Request)=>{
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
  try{
   const path=new URL(req.url).pathname.replace(/^.*\/quiz-api/,'')||'/';
-  if(path==='/health'&&req.method==='GET')return json({ok:true,version:'1.3',quizVersion:2});
+  if(path==='/health'&&req.method==='GET')return json({ok:true,version:'1.3.1',quizVersion:2,questionRevision:2});
   if(path==='/session'&&req.method==='POST'){
    const input=await body(req);const name=normalizeName(input.name);const version=bankVersion(input);const nameKey=await hash(name.toLocaleLowerCase('zh-CN').replace(/\s/g,''));const token=crypto.randomUUID()+crypto.randomUUID();
    const data=checked(await db.rpc('quiz_start',{p_name_key:nameKey,p_name:name,p_token_hash:await hash(token)}));if(version===2)checked(await db.from('quiz_sessions').update({quiz_version:version}).eq('token_hash',await hash(token)));return json({...data,token});
@@ -32,7 +32,8 @@ Deno.serve(async(req:Request)=>{
   }
   if(path==='/results'&&req.method==='POST'){
    const s=await session(req);const input=await body(req);if(input.identity!==s.participant_id)throw new ApiError('答题身份已变化，请返回首页。',409);if(!uuid(input.requestId))throw new ApiError('本次答题标识已失效，请重新开始。');
-   const result=scoreAnswers(input.answers,bankVersion(input));const {data,error}=await db.rpc('quiz_submit',{p_token_hash:s.token_hash,p_request_id:input.requestId,p_answers:input.answers,p_result:result});
+   const revision=input.questionRevision??1;if(revision!==1&&revision!==2)throw new ApiError('请刷新页面后重新开始测评。');
+   const result=scoreAnswers(input.answers,bankVersion(input),revision);const {data,error}=await db.rpc('quiz_submit',{p_token_hash:s.token_hash,p_request_id:input.requestId,p_answers:input.answers,p_result:result});
    if(error?.message.includes('LIMIT_REACHED'))throw new ApiError('这个昵称已完成3次测评，不能继续提交。',409);
    if(error?.message.includes('SESSION_EXPIRED'))throw new ApiError('答题会话已过期，请重新输入昵称。',401);
    if(error)throw error;return json(data);

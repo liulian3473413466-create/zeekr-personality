@@ -10,3 +10,14 @@ test('昵称可含数字、表情或单字，拒绝空白、HTML和控制字符'
 
 test('12道创作题均计分；每维有6—7次机会，单一位置不过度集中',()=>{assert.equal(questions.length,12);for(const c of CODES){const positions=[0,0,0,0];for(const q of questions){assert.equal(q.options.length,4);assert.equal(new Set(q.key).size,4);const p=q.key.indexOf(c);if(p>=0)positions[p]++;}assert(opportunities[c]>=6&&opportunities[c]<=7);assert(Math.max(...positions)<=2);}});
 test('新版本按出题机会校正排序，旧版仍按原始次数排序',()=>{for(let n=0;n<256;n++){const a=questions.map((_,i)=>(n>>((i%4)*2))&3);const r=scoreAnswers(a);assert.equal(r.version,2);assert.equal(signalRate(r,r.leaders[0]),Math.max(...CODES.map(c=>signalRate(r,c))));}assert.throws(()=>scoreAnswers(Array(30).fill(0),2));assert.throws(()=>scoreAnswers(Array(12).fill(0),1));});
+
+test('表述修订保留历史题目和计分，结果携带准确的文案版本',()=>{
+ const old=questionsForVersion(2,1);assert.notEqual(old[0].title,questions[0].title);
+ assert.deepEqual(old.map(q=>q.key),questions.map(q=>q.key));
+ for(let n=0;n<256;n++){
+  const answers=questions.map((_,i)=>(n>>((i%4)*2))&3),before=scoreAnswers(answers,2,1),after=scoreAnswers(answers);
+  assert.equal(before.questionRevision,1);assert.equal(after.questionRevision,2);
+  const {questionRevision:_,...a}=before,{questionRevision:__,...b}=after;assert.deepEqual(a,b);
+ }
+ assert.throws(()=>scoreAnswers(Array(12).fill(0),2,3));
+});

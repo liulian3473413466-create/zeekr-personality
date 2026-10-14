@@ -9,6 +9,9 @@ const participants=Array.from({length:15},(_,i)=>({id:crypto.randomUUID(),name:'
 const own={id:personId,name:'测试同学007🚗',team:null,note:'',selectedResultId:null,createdAt:now,lastSeen:now,progress:0,results:[]};participants.push(own);
 const legacyRecord={id:crypto.randomUUID(),createdAt:now-86400000,result:scoreAnswers(Array(30).fill(2),1),answers:Array(30).fill(2),source:'v1.2'};
 participants[0].results.push(legacyRecord);
+const originalShortRecord={id:crypto.randomUUID(),createdAt:now-1000,result:scoreAnswers(Array(12).fill(0),2,1),answers:Array(12).fill(0),source:'v1.3'};
+delete originalShortRecord.result.questionRevision; // Existing v1.3 rows have no wording revision.
+participants[0].results.splice(1,0,originalShortRecord);
 const context=await browser.newContext({viewport:{width:390,height:844},acceptDownloads:true});
 const errors=[];context.on('page',p=>p.on('pageerror',e=>errors.push(e.message)));
 await context.route('https://quiz-test.supabase.co/**',async route=>{
@@ -16,7 +19,7 @@ await context.route('https://quiz-test.supabase.co/**',async route=>{
  if(path==='/session'){data={identity:personId,used,remaining:3-used};if(req.method()==='POST')data.token='0'.repeat(72);}
  else if(path==='/progress'){own.progress=body.answered;data={ok:true};}
  else if(path==='/results'){
-  assert.equal(body.quizVersion,2);assert.equal(body.answers.length,12);submissions.push(body);if(!savedResult||savedResult.requestId!==body.requestId){savedResult={id:crypto.randomUUID(),createdAt:now,result:scoreAnswers(body.answers),requestId:body.requestId};used++;own.results.unshift({...savedResult,answers:body.answers,source:'测试数据'});}
+  assert.equal(body.quizVersion,2);assert.equal(body.questionRevision,2);assert.equal(body.answers.length,12);submissions.push(body);if(!savedResult||savedResult.requestId!==body.requestId){savedResult={id:crypto.randomUUID(),createdAt:now,result:scoreAnswers(body.answers,body.quizVersion,body.questionRevision),requestId:body.requestId};used++;own.results.unshift({...savedResult,answers:body.answers,source:'测试数据'});}
   if(failOnce){status=503;data={error:'模拟网络断开，请重新提交。'};failOnce=false;}else data={id:savedResult.id,used,remaining:3-used};
  }else if(path.startsWith('/results/')){data={id:savedResult.id,createdAt:now,result:savedResult.result};}
  else if(path.startsWith('/auth/v1/token')){const user={id:crypto.randomUUID(),email:'admin@example.test',aud:'authenticated',role:'authenticated'};data={access_token:'mock-access-token',refresh_token:'mock-refresh-token',token_type:'bearer',expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,user};}
@@ -45,11 +48,12 @@ try{
  await page.goto(base+'#/admin');await page.getByLabel('管理员邮箱').fill('admin@example.test');await page.getByLabel('密码',{exact:true}).fill('test-only-password');await page.getByRole('button',{name:'登录后台'}).click();await page.getByRole('heading',{name:'把不同的你，组在一起。'}).waitFor();
  await page.locator('.participant-row').first().getByRole('button',{name:'查看详情 ↗'}).click();
  await page.getByLabel('查看历次测评').selectOption(legacyRecord.id);assert.equal(await page.locator('.answer-row').count(),30);assert.match(await page.locator('.answer-row').first().innerText(),new RegExp(questionsForVersion(1)[0].title.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ await page.getByLabel('查看历次测评').selectOption(originalShortRecord.id);assert.equal(await page.locator('.answer-row').count(),12);assert((await page.locator('.answer-row').first().innerText()).includes(questionsForVersion(2,1)[0].title));
  await page.getByLabel('查看历次测评').selectOption(participants[0].results[0].id);assert.equal(await page.locator('.answer-row').count(),12);assert((await page.locator('.answer-row').first().innerText()).includes(questions[0].title));await page.getByLabel('关闭详情').click();
  await page.getByRole('button',{name:'四组分配',exact:true}).click();await page.getByRole('button',{name:'生成四组建议'}).click();for(let i=0;i<4;i++)assert.equal(await page.locator('.team-column').nth(i).locator('.team-person').count(),4);
  await page.getByRole('button',{name:'保存分组与备注'}).click();await page.getByText('分组和备注已保存。',{exact:true}).waitFor();assert.equal(version,1);
  await page.screenshot({path:'outputs/v1.3-admin-desktop.png',fullPage:true});await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:'outputs/v1.2-admin-mobile.png',fullPage:true});
  const exportPromise=page.waitForEvent('download');await page.getByRole('button',{name:'导出全部 CSV ↓'}).click();const csv=await exportPromise;await csv.saveAs('outputs/v1.2-admin-export.csv');assert(readFileSync('outputs/v1.2-admin-export.csv','utf8').includes('测试同学'));
- const csvText=readFileSync('outputs/v1.2-admin-export.csv','utf8');assert(csvText.includes('12题创作版'));assert(csvText.includes('30题旧版'));assert(csvText.includes(questionsForVersion(1)[29].options[2]));
+ const csvText=readFileSync('outputs/v1.2-admin-export.csv','utf8');assert(csvText.includes('12题创作版'));assert(csvText.includes('12题直觉版'));assert(csvText.includes('30题旧版'));assert(csvText.includes(questionsForVersion(1)[29].options[2]));assert(csvText.includes(questionsForVersion(2,1)[0].options[0]));
  assert.deepEqual(errors,[]);console.log(JSON.stringify({nickname:true,twelveQuestions:true,legacyHistory:true,autoNext:true,backAndResume:true,retryIdempotent:true,cars:true,exportPng:[png.readUInt32BE(16),png.readUInt32BE(20)],anonymousShare:true,retest:true,adminFourTeams:true,adminSaveAndExport:true,responsive:[320,390,768,1440],errors}));
 }finally{await browser.close();}

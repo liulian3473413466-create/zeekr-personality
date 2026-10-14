@@ -11,7 +11,9 @@
 
 ## 两个版本
 
-当前版本 `v1.3`：昵称入口、12道KOC创作情境题（题库版本2），全部计分。旧30题库冻结为版本1，旧记录、分享链接及已用次数保留。后台按结果版本查看答案、导出CSV，分组倾向按各题库的出现机会校正。前端请求显式带 quizVersion=2；缺省版本1以兼容尚未刷新的旧客户端。完整题库与邀约见 docs/题库与邀约-v1.3.html。
+当前版本 `v1.3.1`：12题表述简化，选项改为更短的口语反应或具体偏好；计分规则不变。结果/提交增加 questionRevision=2；旧12题记录（无修订号或1）使用 lib/quiz-v2.ts 冻结文案，后台与CSV分别解释。无需数据库迁移。部署 Edge Function 时包含 quiz.ts、quiz-v1.ts、quiz-v2.ts 三个共享文件，再发布前端。
+
+`v1.3`：昵称入口、12道KOC创作情境题（题库版本2），全部计分。旧30题库冻结为版本1，旧记录、分享链接及已用次数保留。后台按结果版本查看答案、导出CSV，分组倾向按各题库的出现机会校正。前端请求显式带 quizVersion=2；缺省版本1以兼容尚未刷新的旧客户端。完整题库与邀约见 docs/题库与邀约-v1.3.html。
 
 迁移顺序：先应用新增 short_quiz_nicknames SQL 迁移，再部署 quiz-api 及两个 _shared 题库文件，最后发布 Pages 前端。迁移支持两版记录，不删除或重算历史结果。回退时保留兼容两版记录的数据库、API及后台；不要在已有12题记录后直接恢复旧后台（旧后台固定按30题解释）。修复或回退文案/前台流程时以 v1.3 兼容层为基础；旧 v1.2.2 标签仍留存参考，数据库不做破坏性逆迁移。
 
@@ -40,7 +42,7 @@ GitHub 仓库 Variables 配置 `VITE_SUPABASE_URL` 和 `VITE_SUPABASE_PUBLISHABL
 
 1. 建立专用 Supabase 项目。新账号/新组织需由运营确认；不要复用未知项目。
 2. 按文件名顺序应用 `supabase/migrations/` 中的 SQL 迁移；线上迁移历史与本地文件保持一致。
-3. `npm run build` 会同步 `lib/quiz.ts`、冻结的 `lib/quiz-v1.ts` 到 Edge Function 的 `_shared/`，部署时两个文件均须包含。
+3. `npm run build` 会同步 `lib/quiz.ts`、冻结的 `lib/quiz-v1.ts` 和 `lib/quiz-v2.ts` 到 Edge Function 的 `_shared/`，部署时三个文件均须包含。
 4. 部署 `supabase/functions/quiz-api`，`verify_jwt=false`；函数自身校验参与者随机会话与管理员 Supabase Auth JWT。公开读取结果仅返回结果内容，所有管理接口逐次校验管理员表。
 5. 所有表启用 RLS，anon/authenticated 没有直接读表、写表或执行内部 RPC 的权限；仅 Edge Function 的服务端角色访问。
 6. 初始化管理员时生成32字节随机十六进制令牌，仅将 SHA256 摘要、管理员邮箱与短期过期时间写入 `quiz_setup`。一次性链接为 `#/admin/setup?token=<令牌>`。运营本人设定至少12位密码；激活后令牌记录删除。令牌、密码、私人邮箱与用户数据不提交到Git。
