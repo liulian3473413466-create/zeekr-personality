@@ -1,38 +1,26 @@
+import {legacyQuestions,legacyBonusTags} from './quiz-v1.ts';
 export const CODES = ["V", "R", "I", "N", "E", "C", "O"] as const;
 export type Code = typeof CODES[number];
+export type QuizVersion = 1|2;
+export const QUIZ_VERSION:QuizVersion=2;
 export type Question = { title: string; options: string[]; key: string | null };
-export const questions: Question[] = [
- {title:'周五晚上，朋友发来：“明天出去吗？”你最可能回：',options:['“我收藏了个没去过的地方。”','“你这周累不累？找个轻松点的？”','“几点走？我看看怎么安排。”','“把地址发我，我先看看值不值得去。”'],key:'ICOR'},
- {title:'旅行回来，朋友问“这趟怎么样”，你通常从哪儿讲起？',options:['“有一件事，真的够我讲一年。”','“我给你模仿一下当时那个场面。”','“这条路线挺顺，下次可以照着走。”','“有几个地方和网上说的不太一样。”'],key:'NEOR'},
- {title:'老朋友突然翻出一张十年前的合照，你会：',options:['想起那天后来还发生了什么。','立刻复刻一下自己当年的表情。','提议：“要不找机会原地重拍？”','看看好久没联系的那个人最近怎么样。'],key:'NEIC'},
- {title:'朋友发来九张照片，让你帮忙选一张头像。你先看：',options:['哪张的光线和背景最舒服。','哪张最有“本人登场”的感觉。','哪张是朋友自己看着最开心的。','缩成微信头像以后，哪张还看得清。'],key:'VECR'},
- {title:'聚会订好了，群里却突然安静下来。你更可能：',options:['发一张场地照片：“这里晚上应该挺好看。”','发条语音：“各位，别到时候集体失踪啊。”','提议：“每个人带一样奇怪但好吃的东西？”','发条确认：“周六六点，这个地址，收到扣1。”'],key:'VEIO'},
- {title:'朋友来你的城市玩，你想带对方去的第一个地方是：',options:['傍晚特别好看的那条街。','你有一段故事的老地方。','对方念叨过很久、一直没去成的店。','离住处近，逛完还能顺路吃饭的地方。'],key:'VNCO'},
- {title:'刷到一家很火的店，你最容易被哪种内容吸引？',options:['几张照片，把店里那种感觉拍出来了。','老板为什么开这家店的故事。','“这家店还可以这样玩”的新发现。','菜单、价格、排队时间，写得明明白白。'],key:'VNIR'},
- {title:'周末出门，走到一半下雨了。你的第一反应更接近：',options:['“谁没带伞？先挤我这边。”','“附近有室内的地方，我改一下路线。”','“看下雨云图，这阵雨大概要多久？”','“雨天也行，要不换个玩法？”'],key:'CORI'},
- {title:'朋友给你发了一条两分钟语音。你点开后通常会：',options:['也回一条语音，边听边想接什么话。','先记住里面有没有需要我办的事。','听到不清楚的地方，回头确认一下。','顺着听完，想知道这件事后来怎样了。'],key:'EORN'},
- {title:'你的手机相册，更像哪种现场？',options:['同一个夕阳，拍了二十七张。','截图比照片多，“以后有用”。','朋友的正常照片不多，表情包不少。','吃的、路上的、随手拍的，全在一起。'],key:null},
- {title:'出去玩，朋友说：“拍一段吧，以后还能看看。”你更想：',options:['“来，我先说两句。”','“我们拍个十年后回看的版本？”','“等一下，把还没过来的人也叫上。”','“从今天最离谱的那件事开始讲。”'],key:'EICN'},
- {title:'KTV里，一首很熟的前奏响了。你会先：',options:['拿起麦：“这首我会！”','看看旁边的人：“你是不是一直想唱这首？”','看屏幕确认：“这是原版还是现场版？”','觉得现在的灯光很合适，顺手拍一张。'],key:'ECRV'},
- {title:'买了一件自己很喜欢的新东西，你最想怎么分享？',options:['直接拍一段上手感受。','想一个别人没用过的介绍方式。','等用了几天，把使用过程整理好再发。','先给它找个好看的地方拍照。'],key:'EIOV'},
- {title:'一天行程快结束了，你觉得“今天没白来”的瞬间是：',options:['发生了一件以后想起来还会笑的事。','同行的人说：“今天出来真好。”','想去的地方基本都去了，也没太赶。','拍到了一张舍不得划走的照片。'],key:'NCOV'},
- {title:'到家后，你在停好的车里多坐了五分钟。那时更可能在：',options:['回味今天某个人说的一句话。','突然想到周末可以做点不一样的事。','把白天没想明白的一件事再捋一遍。','看着车窗外的灯光，什么也不急着做。'],key:'NIRV'},
- {title:'四个人点外卖，二十分钟过去，还在问“吃什么”。你会：',options:['“我列三个，投票，五分钟内下单。”','“先看哪家现在送得快。”','“换个思路，要不每人点一样拼着吃？”','“有没有人特别饿，或者今天不能吃辣？”'],key:'ORIC'},
- {title:'民宿临时通知，原来订的房间住不了了。你更可能先：',options:['找附近能接上的住宿，把今晚安排好。','把原订单和可替代房型逐项对一下。','问清楚来龙去脉：“怎么突然变成这样了？”','直接打电话沟通，把几个人的意见说明白。'],key:'ORNE'},
- {title:'朋友生日，你更想送的是：',options:['一份拆开后会说“这也能想到”的礼物。','对方随口提过、自己一直没买的东西。','和你们某段共同经历有关的东西。','一段你亲自录的、能把对方逗笑的视频。'],key:'ICNE'},
- {title:'朋友第一次拍口播，连续卡了五次。你会先：',options:['“先歇会儿，我们不急着这一遍过。”','“我听了一下，总是卡在这几个字。”','“先换个舒服点的位置，镜头不用贴这么近。”','“你先当作在跟我聊天，我来接你的话。”'],key:'CRVE'},
- {title:'“这版就定了”之后，你最像哪种人？',options:['好的，文件名终于不用再加“最终”了。','好的，但我洗澡时可能又想到一句。','好的，我再看最后一遍。真的最后一遍。','好的，发出去之后别让我再看了。'],key:null},
- {title:'出门拍点东西，离日落只剩二十分钟。你更想：',options:['“试个新拍法，可能有惊喜。”','“先把最需要的三个镜头拍完。”','“趁现在这个光，把最好看的画面留下。”','“我先来一段，这会儿状态正好。”'],key:'IOVE'},
- {title:'几个人一起给朋友准备惊喜，你最先想到：',options:['对方喜不喜欢这种被突然围住的感觉。','怎么让人、东西和时间都对上。','现场怎么布置，第一眼会比较好看。','用哪段共同回忆做开场。'],key:'COVN'},
- {title:'逛到一条老街，你最容易停在：',options:['没在攻略里出现过的小岔路口。','一块写着老街来历的介绍牌前。','门头和树影刚好搭在一起的店外。','一位正在讲过去故事的店主旁边。'],key:'IRVN'},
- {title:'大家都说某件东西“特别好用”，你借到手后最想：',options:['试试大家夸的地方，自己能不能感受到。','看看它还能不能用来做点别的。','想想家里谁用它会更省事。','用它完成一件一直想做的小事。'],key:'RICO'},
- {title:'准备把一段视频发到朋友圈，发布前你会先确认：',options:['时间、地点、字幕有没有写错。','别人能不能看懂，这段为什么值得发。','自己那句开场，会不会太端着。','该补的内容是不是已经放齐了。'],key:'RNEO'},
- {title:'散场后，什么最容易让你觉得“下次还想一起出来”？',options:['有人记得大家各自的小习惯。','一起经历了一件以后能反复讲的事。','聊天有来有回，不用一直找话题。','每次都能尝试一点以前没做过的事。'],key:'CNEI'},
- {title:'朋友问：“这两个视频开头，你更喜欢哪个？”你会：',options:['各看一遍，比较哪个更快让人明白要讲什么。','先看哪个画面更抓眼。','把两段都念出来，听哪个更像自然说话。','先问朋友自己更喜欢哪版，为什么。'],key:'RVEC'},
- {title:'临时多出一个小时，原定行程已经逛完了。你更可能：',options:['看看回程时间，选一个顺路的地方。','回刚才那个地方，补拍一张想拍的照片。','找个地方坐下，接着聊刚才没聊完的话题。','打开地图，挑个名字有意思的地方去看看。'],key:'OVEI'},
- {title:'聚会结束，大家准备回家，你通常会：',options:['把拼车和出发时间确认一下。','喊住大家：“等一下，这个位置合张影。”','念叨一句：“今天那一幕真的太好笑了。”','问问有没有人落东西、要不要带点水走。'],key:'OVNC'},
- {title:'半年后再看一次旅行记录，你最想留下的是：',options:['当时觉得很好用、下次还能照着走的经验。','那些一看就想设成壁纸的画面。','当时的人和事，尤其那些快忘掉的小细节。','那些“也不知道怎么想的，但还挺好玩”的尝试。'],key:'RVNI'},
+export const questions:Question[] = [
+ {title:'收到任务：“拍一条你的极氪日常。”你脑子里先冒出：',options:['傍晚那束光，落在车身上一定好看。','上周接朋友那一路，够讲一段了。','要不让后备厢里的东西当一次主角？','那个天天在用的功能，我想讲清楚。'],key:'VNIR'},
+ {title:'第一次和组员碰面，大家客气了三分钟。你更可能：',options:['“咱们先定个小目标，今天拍成什么？”','“大家都想试哪一块？先聊聊。”','“我先来，拍砸了你们就当花絮。”','“你们有没有拍过什么特别离谱的现场？”'],key:'OCEN'},
+ {title:'刷到一条很火的同款车视频，你顺手点了收藏。最可能是因为：',options:['它把一个功能讲得很明白。','这个玩法，我想换个角度试试。','这几个镜头，反复看还是觉得舒服。','这套拍法不复杂，下次真能用上。'],key:'RIVO'},
+ {title:'朋友口播卡了五遍，开始说“我不行”。你会先：',options:['“先歇一下，刚才有一句其实挺自然。”','“你就跟我说，我接你的话。”','“别背稿了，从你上次真的遇到那件事讲。”','“换个位置试试，别让镜头贴这么近。”'],key:'CENV'},
+ {title:'刚拍完一遍，发现根本没点录像。你的第一句更像：',options:['“没事，刚才算彩排，这遍更熟！”','“等一下，先确认声音也开了。”','“要不把这个翻车过程也拍进去？”','“先看看大家累不累，再来一遍。”'],key:'ERIC'},
+ {title:'素材拍了一堆，剪到一半开始纠结。你最舍不得删的是：',options:['没在脚本里，但特别像当天的那一小段。','为了这个光，等了好久才拍到的镜头。','少了它，前后就接不起来的那一步。','能让人一下明白功能怎么用的那几秒。'],key:'NVOR'},
+ {title:'想好的拍摄地点临时进不去。你更可能说：',options:['“旁边那条路挺有意思，换个拍法？”','“附近还有两处，先去离得近的。”','“人都在，先拍段聊天找找状态。”','“先找个能坐的地方，别让大家干等。”'],key:'IOEC'},
+ {title:'视频发出去后，你最想收到哪条评论？',options:['“你这几个镜头，我来回看了好几遍。”','“终于有人把这个说清楚了。”','“看得很舒服，像朋友在跟我聊天。”','“这段我懂，我也有过一模一样的经历。”'],key:'VRCN'},
+ {title:'组里说“这个点子有点冒险”。你通常会：',options:['“先试个十秒版本，看看有没有意思。”','“我来演一下，你们看完再判断。”','“我们还剩多久？能试就留点时间。”','“我找几张参考图，大家先看那个感觉。”'],key:'IEOV'},
+ {title:'同一条片子有两个剪法，你更容易被什么说服？',options:['看完会想知道后面还发生了什么。','出镜的人说：“这版更像平时的我。”','找个没看过素材的人，看哪版更容易懂。','有个没见过的处理，第一眼就记住了。'],key:'NCRI'},
+ {title:'离交片还有半小时，你最想再确认一遍：',options:['字幕、参数、功能名，有没有说错。','导出、链接、交付格式，能不能顺利交上。','封面和开头三秒，第一眼够不够好看。','把开场念一遍，听着像不像平时说话。'],key:'ROVE'},
+ {title:'拍摄结束，哪句话最让你想和这群人再合作？',options:['“今天大家都挺自在，没有谁一直硬撑。”','“下次那个新点子，咱们真可以试试。”','“今天这些小插曲，我能记很久。”','“刚才你接的那句话，真的太好笑了。”'],key:'CINE'},
 ];
+export function questionsForVersion(version:QuizVersion):Question[]{return version===1?legacyQuestions:questions;}
+export function quizVersionLabel(version:QuizVersion){return version===1?'30题旧版':'12题创作版';}
+export const opportunities=Object.fromEntries(CODES.map(c=>[c,questions.filter(q=>q.key?.includes(c)).length])) as Record<Code,number>;
 export const personas: Record<Code, {model:string;title:string;label:string;quote:string;description:string;tags:string[];contrast:string;partner:string;color:string}> = {
  V:{model:'001',title:'人间取景器',label:'视觉关注',quote:'生活可以随便过，照片不能随便拍。',description:'别人路过一面墙，你已经看到光、颜色和一个刚刚好的角度。你的“等一下”，往往意味着大家马上会多一张好照片。',tags:['眼睛先开机','这边光好','封面让我选'],contrast:'说好只拍一张，最后只是“只选一张”。',partner:'你可能会欣赏那个能告诉你：这个画面里，正在发生什么故事的人。',color:'#e66a37'},
  R:{model:'007',title:'人间说明书',label:'分析求证',quote:'可以被种草，但得先搞明白。',description:'别人的“听说很好”，到了你这里，通常还有下半场：好在哪、怎么用、是不是适合我。你愿意多弄清一点，也常把复杂的事讲具体。',tags:['容我研究一下','细节对得上','好用要说清楚'],contrast:'本来只想买一样东西，最后顺便做完了功课。',partner:'你可能会欣赏那个能把你的三分钟解释，变成一句让人想继续听的话的人。',color:'#668eb2'},
@@ -42,17 +30,29 @@ export const personas: Record<Code, {model:string;title:string;label:string;quot
  C:{model:'009',title:'全队舒适区',label:'关照他人',quote:'你一到场，大家就不用一直客气。',description:'有人没带伞、有人不好意思说累、有人不太想被拍——这些小信号，你常常会先注意到。和你在一起，人更容易放松下来。',tags:['细节里有照顾','不让人落单','有你就放松'],contrast:'别人的喜好记得清楚，轮到自己却容易说“我都行”。',partner:'你可能会欣赏那个也会停下来问你：“这次你想怎么拍？”的人。',color:'#957aab'},
  O:{model:'9X',title:'从容主理人',label:'组织推进',quote:'你的“没事”，后面通常已经有了下一步。',description:'几个人的想法、时间和安排混在一起时，你习惯先抓住重点。什么时候出发、先做哪件事、临时变化怎么办——想清楚之后，你会更自在。',tags:['心里有张路线图','下一步已想好','变化也能接住'],contrast:'看着很从容，手机备忘录可能非常忙。',partner:'你可能会欣赏那个愿意带来新点子，也愿意和你一起把它做完的人。',color:'#7b888b'},
 };
-export const bonusTags = [['夕阳连拍选手','截图囤积户','表情包供应商','生活随机存档'],['最终版守护者','洗澡时灵感来电','最后再看亿遍','交卷即下班']];
-export type QuizResult = { version:1; scores:Record<Code,number>; leaders:Code[]; secondary:Code[]; kind:'single'|'dual'|'multi'; bonus:string[] };
-export type SavedResult = {id:string;createdAt:number;result:QuizResult};
-export function scoreAnswers(answers:unknown):QuizResult {
- if(!Array.isArray(answers)||answers.length!==30||answers.some(a=>!Number.isInteger(a)||a<0||a>3)) throw new Error('请完成全部30道题后再提交。');
+export const bonusTags=[['先给队友充个电','我来接你的话','真事比稿子好讲','换个机位找状态'],['故事还想看下去','本人感最重要','先让别人看得懂','新剪法想试试']];
+export type QuizResult={version:QuizVersion;scores:Record<Code,number>;leaders:Code[];secondary:Code[];kind:'single'|'dual'|'multi';bonus:string[]};
+export type SavedResult={id:string;createdAt:number;result:QuizResult};
+export function signalRate(result:QuizResult,code:Code){return result.scores[code]/(result.version===1?16:opportunities[code]);}
+export function scoreAnswers(answers:unknown,version:QuizVersion=QUIZ_VERSION):QuizResult{
+ if(version!==1&&version!==2)throw new Error('请刷新页面后重新开始测评。');
+ const bank=questionsForVersion(version);
+ if(!Array.isArray(answers)||answers.length!==bank.length||answers.some((a,i)=>!Number.isInteger(a)||a<0||a>=bank[i].options.length))throw new Error('请完成全部'+bank.length+'道题后再提交。');
  const scores=Object.fromEntries(CODES.map(c=>[c,0])) as Record<Code,number>;
- questions.forEach((q,i)=>{if(q.key)scores[q.key[answers[i]] as Code]++;});
- const ranked=[...CODES].sort((a,b)=>scores[b]-scores[a]);
- const leaders=ranked.filter(c=>scores[ranked[0]]-scores[c]<=1);
- const secondary=leaders.length===1?ranked.filter(c=>c!==leaders[0]&&scores[c]===scores[ranked[1]]):[];
- return {version:1,scores,leaders,secondary,kind:leaders.length===1?'single':leaders.length===2?'dual':'multi',bonus:[bonusTags[0][answers[9]],bonusTags[1][answers[19]]]};
+ bank.forEach((q,i)=>{if(q.key)scores[q.key[answers[i]] as Code]++;});
+ const value=(c:Code)=>version===1?scores[c]:scores[c]/opportunities[c];
+ const ranked=[...CODES].sort((a,b)=>value(b)-value(a));
+ const threshold=version===1?1:1/7;
+ const leaders=ranked.filter(c=>value(ranked[0])-value(c)<=threshold+1e-10);
+ const secondary=leaders.length===1?ranked.filter(c=>c!==leaders[0]&&Math.abs(value(c)-value(ranked[1]))<1e-10):[];
+ const bonus=version===1?[legacyBonusTags[0][answers[9]],legacyBonusTags[1][answers[19]]]:[bonusTags[0][answers[3]],bonusTags[1][answers[9]]];
+ return {version,scores,leaders,secondary,kind:leaders.length===1?'single':leaders.length===2?'dual':'multi',bonus};
 }
 export function resultTitle(result:QuizResult){return result.kind==='single'?personas[result.leaders[0]].title:result.kind==='dual'?'双重灵感配置':'多面创作配置';}
-export function normalizeName(value:unknown){if(typeof value!=='string') throw new Error('请输入真实姓名。');const name=value.normalize('NFKC').trim().replace(/\s+/g,' ');if(name.length<2||name.length>40||! /^[\p{L}\p{M}·.' -]+$/u.test(name))throw new Error('请输入2—40个字符的真实姓名，不含数字或表情。');return name;}
+export function normalizeName(value:unknown){
+ if(typeof value!=='string')throw new Error('请输入昵称。');
+ if(/[<>\u0000-\u001f\u007f]/u.test(value))throw new Error('请输入1—40个字符的昵称，不含尖括号或控制字符。');
+ const name=value.normalize('NFKC').trim().replace(/\s+/g,' ');
+ if(name.length<1||name.length>40||/[<>]/u.test(name))throw new Error('请输入1—40个字符的昵称。');
+ return name;
+}

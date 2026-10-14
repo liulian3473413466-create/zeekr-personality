@@ -3,7 +3,7 @@ import {Vehicle} from './Vehicle';
 
 export default function ResultCard({saved,qr,onVehicleReady,onVehicleError}:{saved:SavedResult;qr:string;onVehicleReady?:()=>void;onVehicleError?:()=>void}){
  const r=saved.result;
- // Leaders are ranked by score; exact ties keep the existing stable code order.
+ // Leaders are ranked by the questionnaire's scoring rule; exact ties keep stable code order.
  // Only presentation is reduced to one persona. Stored scores remain intact for operators.
  const primaryCode=r.leaders[0];
  const primary=personas[primaryCode];
@@ -19,7 +19,7 @@ export default function ResultCard({saved,qr,onVehicleReady,onVehicleError}:{sav
   </div>
   <div className="result-body">
    <section className="analysis-block">
-    <div className="section-kicker">01 / 生活里的你</div>
+    <div className="section-kicker">01 / {r.version===1?'生活里的你':'创作里的你'}</div>
     <p>{primary.description}</p>
     <div className="contrast"><span>小小反差</span><p>{primary.contrast}</p></div>
    </section>
@@ -36,7 +36,7 @@ export default function ResultCard({saved,qr,onVehicleReady,onVehicleError}:{sav
     <div><b>每一种你，都有自己的光。</b><p>极氪 KOC 创作训练营<br/>扫码查看这份人格结果</p></div>
     {qr?<img src={qr} alt="查看此结果的二维码" width="84" height="84"/>:<div className="qr-placeholder"/>}
    </div>
-   <p className="result-disclaimer">本测评呈现本次作答的相对倾向，仅用于活动交流与组队参考。车型人格为创意设定，不是心理诊断或能力评级。分享结果不展示真实姓名。</p>
+   <p className="result-disclaimer">本测评呈现本次作答的相对倾向，仅用于活动交流与组队参考。车型人格为创意设定，不是心理诊断或能力评级。分享结果不展示填写的昵称或姓名。</p>
    <div className="result-serial"><span>CONFIGURATION / {saved.id.slice(0,8).toUpperCase()}</span><span>{new Date(saved.createdAt).toLocaleDateString('zh-CN',{timeZone:'Asia/Shanghai'})}</span></div>
   </div>
  </article>;

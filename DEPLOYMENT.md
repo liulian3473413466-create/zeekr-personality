@@ -11,7 +11,11 @@
 
 ## 两个版本
 
-当前补丁 `v1.2.2`：实际车图完成加载与解码后，才揭晓结果并启动驶入动效；等待中显示准备状态，图片失败或超过20秒时可重试。`node tests/result-loading.test.mjs`（使用受控API的预览构建）验证延迟下载、延迟解码、动画启动时机、失败后重试和离开页面后的清理。原答题、分享、长图和后台浏览器流程亦通过。
+当前版本 `v1.3`：昵称入口、12道KOC创作情境题（题库版本2），全部计分。旧30题库冻结为版本1，旧记录、分享链接及已用次数保留。后台按结果版本查看答案、导出CSV，分组倾向按各题库的出现机会校正。前端请求显式带 quizVersion=2；缺省版本1以兼容尚未刷新的旧客户端。完整题库与邀约见 docs/题库与邀约-v1.3.html。
+
+迁移顺序：先应用新增 short_quiz_nicknames SQL 迁移，再部署 quiz-api 及两个 _shared 题库文件，最后发布 Pages 前端。迁移支持两版记录，不删除或重算历史结果。回退时保留兼容两版记录的数据库、API及后台；不要在已有12题记录后直接恢复旧后台（旧后台固定按30题解释）。修复或回退文案/前台流程时以 v1.3 兼容层为基础；旧 v1.2.2 标签仍留存参考，数据库不做破坏性逆迁移。
+
+`v1.2.2`：实际车图完成加载与解码后，才揭晓结果并启动驶入动效；等待中显示准备状态，图片失败或超过20秒时可重试。`node tests/result-loading.test.mjs`（使用受控API的预览构建）验证延迟下载、延迟解码、动画启动时机、失败后重试和离开页面后的清理。原答题、分享、长图和后台浏览器流程亦通过。
 
 `v1.2.1`：用户结果、分享页、导出长图仅展示最高分主人格和对应车型；最高分完全并列时沿用计分排序取首位，旧结果也使用同一展示规则。后台继续保留全部分数、接近倾向与答案，不修改数据库记录或原计分逻辑。删除页面品牌副标题与车图来源文字。9组前端样例覆盖七种主人格以及原双/多倾向结果，均仅显示一个最高分人格；手机长图与原完整流程检查通过。
 
@@ -35,8 +39,8 @@ GitHub 仓库 Variables 配置 `VITE_SUPABASE_URL` 和 `VITE_SUPABASE_PUBLISHABL
 ## 后端配置
 
 1. 建立专用 Supabase 项目。新账号/新组织需由运营确认；不要复用未知项目。
-2. 应用 `supabase/migrations/20261013125133_quiz_initial.sql`。
-3. `npm run build` 会同步唯一题库 `lib/quiz.ts` 到 Edge Function 的 `_shared/quiz.ts`。
+2. 按文件名顺序应用 `supabase/migrations/` 中的 SQL 迁移；线上迁移历史与本地文件保持一致。
+3. `npm run build` 会同步 `lib/quiz.ts`、冻结的 `lib/quiz-v1.ts` 到 Edge Function 的 `_shared/`，部署时两个文件均须包含。
 4. 部署 `supabase/functions/quiz-api`，`verify_jwt=false`；函数自身校验参与者随机会话与管理员 Supabase Auth JWT。公开读取结果仅返回结果内容，所有管理接口逐次校验管理员表。
 5. 所有表启用 RLS，anon/authenticated 没有直接读表、写表或执行内部 RPC 的权限；仅 Edge Function 的服务端角色访问。
 6. 初始化管理员时生成32字节随机十六进制令牌，仅将 SHA256 摘要、管理员邮箱与短期过期时间写入 `quiz_setup`。一次性链接为 `#/admin/setup?token=<令牌>`。运营本人设定至少12位密码；激活后令牌记录删除。令牌、密码、私人邮箱与用户数据不提交到Git。
@@ -48,6 +52,10 @@ GitHub 仓库 Variables 配置 `VITE_SUPABASE_URL` 和 `VITE_SUPABASE_PUBLISHABL
 迁移须检查旧表/新表人数、结果数、每人次数、结果 UUID 和答案/计分逐条一致。公开分享网址会换域名，旧网址仍由保留的 v1.1 服务承载。正式切换前再读取一次旧表并补齐差异。
 
 ## 验证范围
+
+- v1.3：13项计分、昵称、SQL迁移兼容与分组检查通过；受控浏览器覆盖12题自动继续、返回/刷新、幂等重试、1074×3990长图、匿名分享及后台新旧题库切换，320/390/768/1440宽度无溢出。图片加载与解码等待检查通过。
+- v1.3云端接口：新12题服务端计分、旧客户端30题兼容、不同版本共同占用三次额度、重复提交幂等、并发上限、后台混合历史、匿名读表拒绝均已检查。迁移前现有7份结果的整行摘要在迁移后逐条不变。测试数据仅使用临时账户，验后清理。
+- 当前安全顾问另提示 Supabase Auth 未开启泄露密码检查（既有配置，本次未改动管理员密码或套餐）。[官方说明与启用条件](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)。RLS无策略仍为预期的客户端默认拒绝访问设置。
 
 - `node --test tests/core.test.mjs tests/teams.test.mjs tests/database.test.mjs`：问卷配平、计分、分组、CSV安全、真实 Postgres 内核本地SQL权限与事务规则。
 - `tests/frontend.test.mjs`：使用明确标记的受控 API 测试数据验证浏览器行为；不能代替云端验证。要求测试构建使用 `https://quiz-test.supabase.co` 和测试公开key，预览端口5174。

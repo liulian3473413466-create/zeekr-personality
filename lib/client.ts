@@ -22,5 +22,5 @@ export async function api<T=SessionStatus>(path:string,body?:unknown,options:{si
 }
 export type SessionStatus={identity:string;remaining:number;used:number;id?:string};
 export type AdminResult=SavedResult&{participantId:string;answers:number[];source:string};
-export type Participant={id:string;name:string;createdAt:number;team:number|null;note:string;selectedResultId:string|null;progress:number;lastSeen:number;results:AdminResult[]};
+export type Participant={id:string;name:string;createdAt:number;team:number|null;note:string;selectedResultId:string|null;progress:number;progressTotal?:number;lastSeen:number;results:AdminResult[]};
 export type AdminData={participants:Participant[];version:number;adminEmail:string};
