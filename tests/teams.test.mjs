@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {suggestTeams,chosenResult,csvCell} from '../lib/teams.ts';
+import {suggestTeams,chosenResult,csvCell,teamFit} from '../lib/teams.ts';
 import {scoreAnswers} from '../lib/quiz.ts';
-const people=Array.from({length:16},(_,i)=>({id:String(i),name:'参与者'+i,team:null,note:'',selectedResultId:null,results:[{id:'r'+i,result:scoreAnswers(Array(12).fill(i%4))}]}));
-test('16人分成4组，各4人，每人恰好出现一次',()=>{const result=suggestTeams(people);for(const t of [1,2,3,4])assert.equal(result.filter(p=>p.team===t).length,4);assert.equal(new Set(result.map(p=>p.id)).size,16);assert(people.every(p=>p.team===null));});
-test('没有结果的人保持待分组；可选特定一次结果',()=>{const p={...people[0],results:[],id:'waiting'};assert.equal(suggestTeams([p,...people.slice(0,3)]).find(x=>x.id==='waiting').team,null);const person={...people[0],selectedResultId:'older',results:[...people[0].results,{id:'older'}]};assert.equal(chosenResult(person).id,'older');});
-test('CSV中禁止公式注入，同时保留换行及引号',()=>{assert.equal(csvCell('=1+1'),'"\'=1+1"');assert.equal(csvCell('甲"乙\n丙'),'"甲""乙\n丙"');});
+const specialist=(i)=>{const role=i%4,a=[role,3,3,3,3,role,role,role,role,role,Math.floor(i/4),Math.floor(i/4)];a[role+1]=0;return {id:String(i).padStart(2,'0'),name:'参与者'+i,team:null,note:'',selectedResultId:null,results:[{id:'r'+i,result:scoreAnswers(a)}]};};
+const people=Array.from({length:16},(_,i)=>specialist(i));
+test('16人4组，每组各有摄影编导出镜剪辑，风格不覆盖硬性岗位缺口',()=>{const result=suggestTeams(people);for(const t of [1,2,3,4]){const members=result.filter(p=>p.team===t);assert.equal(members.length,4);const fit=teamFit(members);assert.equal(fit.covered,4);assert.equal(new Set(fit.assignments.map(a=>a.role)).size,4);assert.equal(fit.collaboration,100);assert.equal(fit.weighted,.8*fit.roleFit+.2*fit.collaboration);}assert.equal(new Set(result.map(p=>p.id)).size,16);assert(people.every(p=>p.team===null));assert.deepEqual(suggestTeams([...people].reverse()).sort((a,b)=>a.id.localeCompare(b.id)),result);});
+test('1到15人的部分名单仍均匀分四组，不把无答卷者编入',()=>{for(let n=1;n<=15;n++){const result=suggestTeams(people.slice(0,n)),counts=[1,2,3,4].map(t=>result.filter(p=>p.team===t).length);assert.equal(counts.reduce((a,b)=>a+b),n);assert(Math.max(...counts)-Math.min(...counts)<=1);}const p={...people[0],results:[],id:'waiting'};assert.equal(suggestTeams([p,...people.slice(0,3)]).find(x=>x.id==='waiting').team,null);});
+test('历史结果不推导岗位，尊重所选参考；不会偷偷覆盖人工分组',()=>{const p={...people[0],team:2,selectedResultId:'older',results:[...people[0].results,{id:'older',result:scoreAnswers(Array(30).fill(0),1)}]};assert.equal(chosenResult(p).id,'older');assert.throws(()=>suggestTeams([p]),/没有岗位信息/);assert.equal(p.team,2);assert.equal(teamFit([p]).covered,0);});
+test('四个新手不会被兴趣或性格推成独立创作班底',()=>{const a=[4,3,3,3,3,0,0,0,4,0,0,0];const novices=people.slice(0,4).map(p=>({...p,results:[{id:p.id,result:scoreAnswers(a)}]}));const fit=teamFit(novices);assert.equal(fit.covered,0);assert(fit.assignments.every(a=>!a.independent));});
+test('人数上限与CSV公式注入保护',()=>{assert.throws(()=>suggestTeams([...people,{...people[0],id:'extra'}]),/最多支持16/);assert.equal(csvCell('=1+1'),'"\'=1+1"');assert.equal(csvCell('甲"乙\n丙'),'"甲""乙\n丙"');});

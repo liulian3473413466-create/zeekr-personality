@@ -6,7 +6,7 @@ const json=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,
 const uuid=(x:unknown):x is string=>typeof x==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x);
 const hash=async(s:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s))),v=>v.toString(16).padStart(2,'0')).join('');
 class ApiError extends Error{constructor(message:string,public status=400){super(message);}}
-function bankVersion(input:any):QuizVersion{const v=input.quizVersion??1;if(v!==1&&v!==2)throw new ApiError('请刷新页面后重新开始测评。');return v;}
+function bankVersion(input:any):QuizVersion{const v=input.quizVersion??1;if(v!==1&&v!==2&&v!==3)throw new ApiError('请刷新页面后重新开始测评。');return v;}
 function checked<T>({data,error}:{data:T;error:unknown}):T{if(error)throw error;return data;}
 async function body(req:Request){if(!req.headers.get('content-type')?.includes('application/json'))throw new ApiError('请求格式不正确。');const raw=await req.text();if(raw.length>64000)throw new ApiError('提交内容过长。');try{return JSON.parse(raw);}catch{throw new ApiError('请求格式不正确。');}}
 async function session(req:Request){const token=req.headers.get('x-quiz-session');if(!token||token.length!==72)throw new ApiError('请先输入昵称，再开始测评。',401);const tokenHash=await hash(token);const row=checked(await db.from('quiz_sessions').select('*').eq('token_hash',tokenHash).gt('expires_at',new Date().toISOString()).maybeSingle());if(!row)throw new ApiError('答题会话已过期，请重新输入昵称。',401);return row;}
@@ -19,10 +19,10 @@ Deno.serve(async(req:Request)=>{
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
  try{
   const path=new URL(req.url).pathname.replace(/^.*\/quiz-api/,'')||'/';
-  if(path==='/health'&&req.method==='GET')return json({ok:true,version:'1.3.1',quizVersion:2,questionRevision:2});
+  if(path==='/health'&&req.method==='GET')return json({ok:true,version:'1.4.0',quizVersion:3,questionRevision:1});
   if(path==='/session'&&req.method==='POST'){
    const input=await body(req);const name=normalizeName(input.name);const version=bankVersion(input);const nameKey=await hash(name.toLocaleLowerCase('zh-CN').replace(/\s/g,''));const token=crypto.randomUUID()+crypto.randomUUID();
-   const data=checked(await db.rpc('quiz_start',{p_name_key:nameKey,p_name:name,p_token_hash:await hash(token)}));if(version===2)checked(await db.from('quiz_sessions').update({quiz_version:version}).eq('token_hash',await hash(token)));return json({...data,token});
+   const data=checked(await db.rpc('quiz_start',{p_name_key:nameKey,p_name:name,p_token_hash:await hash(token)}));if(version!==1)checked(await db.from('quiz_sessions').update({quiz_version:version}).eq('token_hash',await hash(token)));return json({...data,token});
   }
   if(path==='/session'&&req.method==='GET')return json(await status((await session(req)).participant_id));
   if(path==='/progress'&&req.method==='POST'){
@@ -40,7 +40,7 @@ Deno.serve(async(req:Request)=>{
   }
   if(path.startsWith('/results/')&&req.method==='GET'){
    const id=path.slice(9);if(!uuid(id))throw new ApiError('找不到这份结果。',404);
-   const row=checked(await db.from('quiz_results').select('id,result,created_at').eq('id',id).maybeSingle());if(!row)throw new ApiError('找不到这份结果。',404);return json(saved(row));
+   const row=checked(await db.from('quiz_results').select('id,result,created_at').eq('id',id).maybeSingle());if(!row)throw new ApiError('找不到这份结果。',404);const publicResult=saved(row);const {roleProfile:_,...persona}=publicResult.result;return json({...publicResult,result:persona});
   }
   if(path==='/bootstrap'&&req.method==='POST'){
    const input=await body(req);if(typeof input.token!=='string'||input.token.length!==64||typeof input.password!=='string'||input.password.length<12||input.password.length>128)throw new ApiError('请设置12—128位的后台密码。');
@@ -53,7 +53,7 @@ Deno.serve(async(req:Request)=>{
    const admin=await requireAdmin(req);
    if(path==='/admin'&&req.method==='GET'){
     const [people,results,sessions,state]=await Promise.all([allRows('quiz_participants','*'),allRows('quiz_results','*'),allRows('quiz_sessions','token_hash,participant_id,answered_count,quiz_version,last_seen'),db.from('quiz_team_state').select('version').eq('id',true).single()]);
-    return json({adminEmail:admin.email,version:checked(state).version,participants:people.map(p=>{const recent=sessions.filter(s=>s.participant_id===p.id).sort((a,b)=>Date.parse(b.last_seen)-Date.parse(a.last_seen))[0];return {id:p.id,name:p.name,createdAt:Date.parse(p.created_at),team:p.team,note:p.note,selectedResultId:p.selected_result_id,progress:recent?.answered_count||0,progressTotal:recent?.quiz_version===2?12:30,lastSeen:Date.parse(recent?.last_seen||p.created_at),results:results.filter(r=>r.participant_id===p.id).sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at)).map(r=>({...saved(r),answers:r.answers,source:r.source,participantId:p.id}))};})});
+    return json({adminEmail:admin.email,version:checked(state).version,participants:people.map(p=>{const recent=sessions.filter(s=>s.participant_id===p.id).sort((a,b)=>Date.parse(b.last_seen)-Date.parse(a.last_seen))[0];return {id:p.id,name:p.name,createdAt:Date.parse(p.created_at),team:p.team,note:p.note,selectedResultId:p.selected_result_id,progress:recent?.answered_count||0,progressTotal:recent?.quiz_version===1?30:12,lastSeen:Date.parse(recent?.last_seen||p.created_at),results:results.filter(r=>r.participant_id===p.id).sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at)).map(r=>({...saved(r),answers:r.answers,source:r.source,participantId:p.id}))};})});
    }
    if(path==='/admin/teams'&&req.method==='POST'){
     const input=await body(req);if(!Number.isInteger(input.version)||!Array.isArray(input.assignments)||input.assignments.length>500)throw new ApiError('分组数据格式不正确。');
@@ -67,7 +67,7 @@ Deno.serve(async(req:Request)=>{
   throw new ApiError('接口不存在。',404);
  }catch(error){
   if(error instanceof ApiError)return json({error:error.message},error.status);
-  if(error instanceof Error&&/^(请输入|请完成)/.test(error.message))return json({error:error.message},400);
+  if(error instanceof Error&&/^(请输入|请完成|请刷新)/.test(error.message))return json({error:error.message},400);
   console.error('quiz-api request failed',error instanceof Error?error.message:'database failure');
   return json({error:'暂时没能连接数据服务，请稍后重试。'},503);
  }

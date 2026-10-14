@@ -46,15 +46,33 @@ test('升级保留30题记录与次数，兼容12题、单字昵称并拒绝版�
   for(const file of migrations.slice(1))await db.exec(readFileSync('supabase/migrations/'+file,'utf8'));
   assert.deepEqual((await db.query('select * from public.quiz_results where id=$1',[first.id])).rows[0],before);
   assert.equal((await start('same-name','旧登记名','new-token')).remaining,2);
-  const shortAnswers=Array(12).fill(1),shortResult=scoreAnswers(shortAnswers);
+  const shortAnswers=Array(12).fill(1),shortResult=scoreAnswers(shortAnswers,2,2);
   await assert.rejects(()=>submit(legacyAnswers,shortResult),/INVALID_ANSWERS/);
   await assert.rejects(()=>submit(shortAnswers,legacyResult),/INVALID_ANSWERS/);
-  await assert.rejects(()=>submit(shortAnswers,{...shortResult,version:3}),/INVALID_QUIZ_VERSION/);
+  await assert.rejects(()=>submit(shortAnswers,{...shortResult,version:4}),/INVALID_QUIZ_VERSION/);
   assert.equal((await submit(shortAnswers,shortResult)).used,2);
   assert.equal((await submit(legacyAnswers,legacyResult)).used,3);
   await assert.rejects(()=>submit(shortAnswers,shortResult),/LIMIT_REACHED/);
   assert.equal((await start('single-name','鹿','single-token')).remaining,3);
   const rows=(await db.query('select result->>\'version\' as version,jsonb_array_length(answers) as n from public.quiz_results where participant_id=$1',[old.identity])).rows;
   assert.deepEqual(rows.map(r=>[r.version,r.n]).sort(),[['1',30],['1',30],['2',12]]);
+ }finally{await db.close();}
+});
+
+test('岗位版扩展不改旧12题结果，保留三次总额度',async()=>{
+ const db=new PGlite();try{
+ await db.exec('create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key);');
+ const files=readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')).sort();
+ for(const f of files.slice(0,2))await db.exec(readFileSync('supabase/migrations/'+f,'utf8'));
+ const p=(await db.query('select public.quiz_start($1,$2,$3) as data',['key','岗位测试','token'])).rows[0].data;
+ const a=Array(12).fill(0);
+ await db.query('select public.quiz_submit($1,$2,$3,$4)',['token',crypto.randomUUID(),JSON.stringify(a),JSON.stringify(scoreAnswers(a,2,2))]);
+ const before=(await db.query('select * from public.quiz_results')).rows;
+ for(const f of files.slice(2))await db.exec(readFileSync('supabase/migrations/'+f,'utf8'));
+ assert.deepEqual((await db.query('select * from public.quiz_results')).rows,before);
+ const result=(await db.query('select public.quiz_submit($1,$2,$3,$4) as data',['token',crypto.randomUUID(),JSON.stringify(a),JSON.stringify(scoreAnswers(a))])).rows[0].data;
+ assert.equal(result.used,2);assert.equal(result.remaining,1);
+ const session=(await db.query('select quiz_version,answered_count from public.quiz_sessions')).rows[0];assert.deepEqual(session,{quiz_version:3,answered_count:12});
+ const row=(await db.query('select source,result from public.quiz_results where id=$1',[result.id])).rows[0];assert.equal(row.source,'v1.4');assert(row.result.roleProfile);
  }finally{await db.close();}
 });
