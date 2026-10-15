@@ -2,6 +2,7 @@ import {creatorRoles} from '@/lib/creator-personas';
 import {useEffect,useState} from 'react';
 import {Header} from './Brand';
 import {api,authClient,configured,resultUrl,type AdminData,type Participant} from '@/lib/client';
+import {loginErrorMessage} from '@/lib/request';
 import {CODES,personas,questionsForVersion,quizVersionLabel,resultTitle,signalRate} from '@/lib/quiz';
 import {ROLES,roleNames,levelNames,collaborationNames,primaryRoleLabel,type RoleProfile} from '@/lib/roles';
 import {chosenResult,csvCell,suggestTeams,teamFit} from '@/lib/teams';
@@ -27,7 +28,7 @@ export default function AdminApp(){
  useEffect(()=>{if(detailId)document.getElementById('participant-detail')?.scrollIntoView({behavior:'smooth',block:'start'});},[detailId]);
  useEffect(()=>{if(!dirty)return;const handler=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',handler);return()=>window.removeEventListener('beforeunload',handler);},[dirty]);
  async function refresh(){setBusy(true);setError('');try{const data=await api<AdminData>('/admin',undefined,{admin:true});setPeople(data.participants);setVersion(data.version);setAdminEmail(data.adminEmail);setDirty(false);}catch(e){setError(e instanceof Error?e.message:'数据加载失败。');}finally{setBusy(false);}}
- async function login(e:React.FormEvent){e.preventDefault();setBusy(true);setError('');try{if(!configured)throw new Error('服务尚未配置，请联系网站维护人员。');let loginEmail=email;if(setupToken){if(password!==confirm)throw new Error('两次输入的密码不一致。');const data=await api<{email:string}>('/bootstrap',{token:setupToken,password});loginEmail=data.email;setSetupToken('');window.history.replaceState({},'',window.location.pathname+'#/admin');}const {error}=await authClient.auth.signInWithPassword({email:loginEmail,password});if(error)throw new Error('邮箱或密码不正确，请重新输入。');setPassword('');setConfirm('');}catch(e){setError(e instanceof Error?e.message:'登录失败，请重试。');}finally{setBusy(false);}}
+ async function login(e:React.FormEvent){e.preventDefault();setBusy(true);setError('');try{if(!configured)throw new Error('服务尚未配置，请联系网站维护人员。');let loginEmail=email;if(setupToken){if(password!==confirm)throw new Error('两次输入的密码不一致。');const data=await api<{email:string}>('/bootstrap',{token:setupToken,password});loginEmail=data.email;setSetupToken('');window.history.replaceState({},'',window.location.pathname+'#/admin');}const {error}=await authClient.auth.signInWithPassword({email:loginEmail,password});if(error)throw new Error(loginErrorMessage(error));setPassword('');setConfirm('');}catch(e){setError(e instanceof Error?e.message:'登录失败，请重试。');}finally{setBusy(false);}}
  function change(id:string,patch:Partial<Participant>){setPeople(prev=>prev.map(p=>p.id===id?{...p,...patch}:p));setDirty(true);setNotice('');}
  async function save(){setBusy(true);setError('');try{const data=await api<{version:number}>('/admin/teams',{version,assignments:people.map(p=>({id:p.id,team:p.team,note:p.note,selectedResultId:p.selectedResultId}))},{admin:true});setVersion(data.version);setDirty(false);setNotice('分组和备注已保存。');}catch(e){setError(e instanceof Error?e.message:'保存失败，请重试。');}finally{setBusy(false);}}
  function suggest(){try{setPeople(suggestTeams(people));setDirty(true);setNotice('已按岗位覆盖优先、80%岗位匹配＋20%协作互补生成建议，尚未保存。请检查标注“需指导”的岗位。');}catch(e){setError(e instanceof Error?e.message:'无法生成建议。');}}

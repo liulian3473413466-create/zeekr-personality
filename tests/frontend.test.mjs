@@ -2,7 +2,8 @@
 import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 import {readFileSync,mkdirSync} from 'node:fs';
-import {questions,scoreAnswers,questionsForVersion} from '../lib/quiz.ts';
+import {questions,scoreAnswers,questionsForVersion,personas} from '../lib/quiz.ts';
+import {NETWORK_ERROR} from '../lib/request.ts';
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
 const now=Date.now(), personId=crypto.randomUUID();let used=0, failOnce=true, savedResult, submissions=[];let version=0;
 const participants=Array.from({length:15},(_,i)=>({id:crypto.randomUUID(),name:'演示参与者'+String.fromCharCode(65+i),team:null,note:'',selectedResultId:null,createdAt:now,lastSeen:now,progress:questions.length,results:[{id:crypto.randomUUID(),createdAt:now,result:scoreAnswers(questions.map(q=>q.key?.includes('VRINECO'[i%7])?q.key.indexOf('VRINECO'[i%7]):0)),answers:Array(questions.length).fill(0),source:'测试数据'}]}));
@@ -13,16 +14,20 @@ const originalShortRecord={id:crypto.randomUUID(),createdAt:now-1000,result:scor
 delete originalShortRecord.result.questionRevision; // Existing v1.3 rows have no wording revision.
 participants[0].results.splice(1,0,originalShortRecord);
 const context=await browser.newContext({viewport:{width:390,height:844},acceptDownloads:true});
+const backend=process.env.QUIZ_TEST_BACKEND_URL||'https://quiz-test.supabase.co';
+const backendPath=new URL(backend).pathname.replace(/\/$/,'');
+let sessionStarts=0,loginAttempts=0,directRequests=0;
+context.on('request',req=>{if(backend!=='https://quiz-test.supabase.co'&&req.url().startsWith('https://quiz-test.supabase.co/'))directRequests++;});
 const errors=[];context.on('page',p=>p.on('pageerror',e=>errors.push(e.message)));
-await context.route('https://quiz-test.supabase.co/**',async route=>{
- const req=route.request(),path=new URL(req.url()).pathname.replace('/functions/v1/quiz-api','');const body=req.postDataJSON();let data,status=200;
- if(path==='/session'){data={identity:personId,used,remaining:3-used};if(req.method()==='POST')data.token='0'.repeat(72);}
+await context.route(backend+'/**',async route=>{
+ const req=route.request(),path=new URL(req.url()).pathname.slice(backendPath.length).replace('/functions/v1/quiz-api','');const body=req.postDataJSON();let data,status=200;
+ if(path==='/session'){data={identity:personId,used,remaining:3-used};if(req.method()==='POST'){sessionStarts++;if(sessionStarts===1){await route.abort('failed');return;}data.token='0'.repeat(72);}}
  else if(path==='/progress'){own.progress=body.answered;data={ok:true};}
  else if(path==='/results'){
   assert.equal(body.quizVersion,3);assert.equal(body.questionRevision,1);assert.equal(body.answers.length,12);submissions.push(body);if(!savedResult||savedResult.requestId!==body.requestId){savedResult={id:crypto.randomUUID(),createdAt:now,result:scoreAnswers(body.answers,body.quizVersion,body.questionRevision),requestId:body.requestId};used++;own.results.unshift({...savedResult,answers:body.answers,source:'测试数据'});}
   if(failOnce){status=503;data={error:'模拟网络断开，请重新提交。'};failOnce=false;}else data={id:savedResult.id,used,remaining:3-used};
  }else if(path.startsWith('/results/')){data={id:savedResult.id,createdAt:now,result:savedResult.result};}
- else if(path.startsWith('/auth/v1/token')){const user={id:crypto.randomUUID(),email:'admin@example.test',aud:'authenticated',role:'authenticated'};data={access_token:'mock-access-token',refresh_token:'mock-refresh-token',token_type:'bearer',expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,user};}
+ else if(path.startsWith('/auth/v1/token')){loginAttempts++;if(loginAttempts===1){await route.abort('failed');return;}if(loginAttempts===2){status=400;data={code:'invalid_credentials',msg:'Invalid login credentials'};}else{const user={id:crypto.randomUUID(),email:'admin@example.test',aud:'authenticated',role:'authenticated'};data={access_token:'mock-access-token',refresh_token:'mock-refresh-token',token_type:'bearer',expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,user};}}
  else if(path.startsWith('/auth/v1/logout'))data={};
  else if(path==='/admin'){data={participants,version,adminEmail:'admin@example.test'};}
  else if(path==='/admin/teams'){assert.equal(body.version,version);for(const patch of body.assignments)Object.assign(participants.find(p=>p.id===patch.id),patch);data={version:++version};}
@@ -30,22 +35,23 @@ await context.route('https://quiz-test.supabase.co/**',async route=>{
  await route.fulfill({status,headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'},body:JSON.stringify(data)});
 });
 try{
- const page=await context.newPage();const base='http://127.0.0.1:5174/';await page.goto(base);
+ const page=await context.newPage();const base=process.env.QUIZ_PREVIEW_URL||'http://127.0.0.1:5174/';await page.goto(base);
  assert.equal(await page.getByPlaceholder('请输入昵称').count(),1);assert.match(await page.locator('.meta-row').innerText(),/12/);assert.doesNotMatch(await page.locator('body').innerText(),/真实姓名/);
- await page.getByLabel('先认识一下，怎么称呼你？').fill('测试同学007🚗');await page.getByRole('button',{name:'开始探索我的人格'}).click();
+ await page.getByLabel('先认识一下，怎么称呼你？').fill('测试同学007🚗');await page.getByRole('button',{name:'开始探索我的人设'}).click();
+ await page.getByRole('alert').filter({hasText:NETWORK_ERROR}).waitFor();assert.equal(sessionStarts,1);await page.getByRole('button',{name:'开始探索我的人设'}).click();
  await page.getByRole('heading',{name:questions[0].title,exact:true}).waitFor();await page.getByRole('radio').nth(0).click();await page.getByRole('heading',{name:questions[1].title,exact:true}).waitFor();
  await page.getByRole('button',{name:'← 上一题',exact:true}).click();await page.getByRole('radio').nth(4).click();await page.getByRole('heading',{name:questions[1].title,exact:true}).waitFor();
  await page.reload();await page.getByRole('button',{name:/继续上次答题/}).click();await page.getByRole('heading',{name:questions[1].title,exact:true}).waitFor();
  for(let i=1;i<questions.length;i++){await page.getByRole('heading',{name:questions[i].title,exact:true}).waitFor();await page.getByRole('radio').nth(questions[i].key?.includes('V')?questions[i].key.indexOf('V'):0).click();}
  await page.getByRole('button',{name:'重新提交并查看结果'}).waitFor();await page.getByRole('button',{name:'重新提交并查看结果'}).click();
  await page.locator('.result-card').waitFor();assert.equal(savedResult.result.version,3);assert.equal(used,1);assert.equal(submissions[0].requestId,submissions[1].requestId);assert.equal(submissions[1].answers[0],4);assert(!await page.locator('body').innerText().then(s=>s.includes('测试同学')));
- await page.locator('.vehicle-photo').first().evaluate(img=>img.decode());assert.match(await page.locator('.vehicle-photo').first().getAttribute('src'),/001\.png/);
+ assert.equal(await page.locator('.vehicle-photo').count(),0);assert.equal(await page.locator('.result-card h1').count(),1);assert.equal(await page.locator('.result-card h1').innerText(),personas[savedResult.result.leaders[0]].title);assert.doesNotMatch(await page.locator('.result-card').innerText(),/创作人格|车型|001|007|7X|8X|009|9X/);
  await page.waitForTimeout(1300);mkdirSync('outputs',{recursive:true});await page.screenshot({path:'outputs/v1.2-result-mobile.png',fullPage:true});
- const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'保存结果长图'}).click();const download=await downloadPromise;await download.saveAs('outputs/v1.2-result-export.png');const png=readFileSync('outputs/v1.2-result-export.png');assert.equal(png.readUInt32BE(16),1074);assert(png.readUInt32BE(20)>3000);await page.getByRole('button',{name:'关闭长图预览'}).click();
+ const cardSize=await page.locator('.result-card').evaluate(node=>({width:node.clientWidth,height:node.clientHeight}));const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'保存结果长图'}).click();const download=await downloadPromise;await download.saveAs('outputs/v1.2-result-export.png');const png=readFileSync('outputs/v1.2-result-export.png');assert.equal(png.readUInt32BE(16),1074);assert(Math.abs(png.readUInt32BE(20)-Math.round(cardSize.height*3))<=6);await page.getByRole('button',{name:'关闭长图预览'}).click();
  for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:900});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Result overflow '+width);}
  const share=await context.newPage();await share.goto(page.url());await share.locator('.result-card').waitFor();assert(!await share.locator('body').innerText().then(s=>s.includes('测试同学')));await share.close();
  await page.getByRole('link',{name:/再测一次/}).click();await page.getByRole('heading',{name:questions[0].title,exact:true}).waitFor();
- await page.goto(base+'#/admin');await page.getByLabel('管理员邮箱').fill('admin@example.test');await page.getByLabel('密码',{exact:true}).fill('test-only-password');await page.getByRole('button',{name:'登录后台'}).click();await page.getByRole('heading',{name:'把不同的你，组在一起。'}).waitFor();
+ await page.goto(base+'#/admin');await page.getByLabel('管理员邮箱').fill('admin@example.test');await page.getByLabel('密码',{exact:true}).fill('test-only-password');await page.getByRole('button',{name:'登录后台'}).click();await page.getByRole('alert').filter({hasText:NETWORK_ERROR}).waitFor();assert.equal(loginAttempts,1);await page.getByRole('button',{name:'登录后台'}).click();await page.getByRole('alert').filter({hasText:'邮箱或密码不正确'}).waitFor();await page.getByRole('button',{name:'登录后台'}).click();await page.getByRole('heading',{name:'把不同的你，组在一起。'}).waitFor();
  await page.locator('.participant-row').first().getByRole('button',{name:'查看详情 ↗'}).click();
  await page.getByLabel('查看历次测评').selectOption(legacyRecord.id);assert.equal(await page.locator('.answer-row').count(),30);assert.match(await page.locator('.answer-row').first().innerText(),new RegExp(questionsForVersion(1)[0].title.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  await page.getByLabel('查看历次测评').selectOption(originalShortRecord.id);assert.equal(await page.locator('.answer-row').count(),12);assert((await page.locator('.answer-row').first().innerText()).includes(questionsForVersion(2,1)[0].title));
@@ -55,5 +61,5 @@ try{
  await page.screenshot({path:'outputs/v1.3-admin-desktop.png',fullPage:true});await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:'outputs/v1.2-admin-mobile.png',fullPage:true});
  const exportPromise=page.waitForEvent('download');await page.getByRole('button',{name:'导出全部 CSV ↓'}).click();const csv=await exportPromise;await csv.saveAs('outputs/v1.2-admin-export.csv');assert(readFileSync('outputs/v1.2-admin-export.csv','utf8').includes('测试同学'));
  const csvText=readFileSync('outputs/v1.2-admin-export.csv','utf8');assert(csvText.includes('12题创作版'));assert(csvText.includes('12题岗位版'));assert(csvText.includes('建议主岗位'));assert(csvText.includes('摄影自报熟练度'));assert(csvText.includes('自报可独立'));assert(csvText.includes('30题旧版'));assert(csvText.includes(questionsForVersion(1)[29].options[2]));assert(csvText.includes(questionsForVersion(2,1)[0].options[0]));
- assert.deepEqual(errors,[]);console.log(JSON.stringify({nickname:true,twelveQuestions:true,legacyHistory:true,autoNext:true,backAndResume:true,retryIdempotent:true,cars:true,exportPng:[png.readUInt32BE(16),png.readUInt32BE(20)],anonymousShare:true,retest:true,adminFourTeams:true,adminSaveAndExport:true,responsive:[320,390,768,1440],errors}));
+ assert.deepEqual(errors,[]);assert.equal(directRequests,0);console.log(JSON.stringify({nickname:true,twelveQuestions:true,legacyHistory:true,autoNext:true,backAndResume:true,retryIdempotent:true,primaryPersonaOnly:true,networkErrorAndManualRetry:true,adminErrorClassification:true,proxyRouting:backend.includes('proxy'),exportPng:[png.readUInt32BE(16),png.readUInt32BE(20)],anonymousShare:true,retest:true,adminFourTeams:true,adminSaveAndExport:true,responsive:[320,390,768,1440],errors}));
 }finally{await browser.close();}

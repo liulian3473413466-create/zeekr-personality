@@ -1,0 +1,49 @@
+# Imported inside the existing HTTPS site; fixed upstream, no data storage.
+# The frontend and Supabase Auth use this same prefix.
+handle_path /koc-quiz-backend/* {
+  route {
+    header {
+      Access-Control-Allow-Origin https://liulian3473413466-create.github.io
+      Access-Control-Allow-Headers "authorization,apikey,content-type,x-quiz-session,x-client-info,x-supabase-api-version"
+      Access-Control-Allow-Methods "GET,POST,OPTIONS"
+      Access-Control-Max-Age "600"
+      Cache-Control "no-store"
+      Vary "Origin"
+      defer
+    }
+
+    @blockedOrigin expression `{http.request.header.Origin} != "" && {http.request.header.Origin} != "https://liulian3473413466-create.github.io" && {http.request.header.Origin} != "https://115.159.112.176"`
+    respond @blockedOrigin "Origin not allowed" 403
+
+    @unsupportedMethod {
+      not method GET POST OPTIONS
+    }
+    respond @unsupportedMethod "Method not allowed" 405
+
+    @unknownPath {
+      not path /functions/v1/quiz-api/health /functions/v1/quiz-api/session /functions/v1/quiz-api/progress /functions/v1/quiz-api/results /functions/v1/quiz-api/results/* /functions/v1/quiz-api/admin /functions/v1/quiz-api/admin/teams /functions/v1/quiz-api/bootstrap /auth/v1/token /auth/v1/user /auth/v1/logout
+    }
+    respond @unknownPath "Not found" 404
+
+    @preflight method OPTIONS
+    respond @preflight 204
+    request_body {
+      max_size 64KB
+    }
+    reverse_proxy https://lkqiceztiqiqhrqbdvnr.supabase.co {
+      header_up Host lkqiceztiqiqhrqbdvnr.supabase.co
+      header_up -Cookie
+      header_up -Referer
+      header_down -Set-Cookie
+      header_down -Access-Control-Allow-Origin
+      header_down -Access-Control-Allow-Credentials
+      header_down -Access-Control-Allow-Headers
+      header_down -Access-Control-Allow-Methods
+      header_down -Access-Control-Max-Age
+      transport http {
+        dial_timeout 5s
+        response_header_timeout 12s
+      }
+    }
+  }
+}

@@ -36,9 +36,15 @@
 
 ## 前端发布
 
+2026-10-15 移动网络修复：前台地址不变。增加 `VITE_SUPABASE_PROXY_URL=https://115.159.112.176/koc-quiz-backend`，测评 API 与管理员 Auth 均经此 HTTPS 入口转发到原 Supabase 项目。原因是实测本机无代理直连 GitHub Pages 为200、Supabase连接重置；新入口无代理可达。数据库、历史结果、三次额度及评分均不迁移、不修改。
+
+代理配置在 `infra/mobile-api-relay.caddy`，集成进现有服务器 `/opt/zeekr-community/infra/Caddyfile.ip` 的 HTTPS site，只新增 `/koc-quiz-backend/*`；原社区 `/api/*` 与首页保持原路由。固定上游、限制路径/方法及浏览器来源，不缓存数据、不转发原站 Cookie。既有 IP 证书由 `zeekr-ip-cert-renew.timer` 自动续期；维护时保留此服务和新增路由。修改前配置已另存服务器的 `Caddyfile.ip.before-koc-20261015T100439Z`。回退应同时恢复代理配置、前端提交和 GitHub Variable；仅恢复旧客户端会重新依赖手机直连 Supabase。
+
+请求层设置15秒超时并显示中文网络错误，不自动重发写入。服务端既有 requestId 幂等继续保留；手动重试不重复占用次数。请求取消仍作为取消处理。管理员网络失败与密码错误分别提示。
+
 Node 24，运行 `npm ci`、`npm run build`。输出目录 `dist-pages/`，不需要服务器。路由使用哈希：`#/r/<uuid>`、`#/admin`，GitHub Pages 刷新分享链接不会404。
 
-GitHub 仓库 Variables 配置 `VITE_SUPABASE_URL` 和 `VITE_SUPABASE_PUBLISHABLE_KEY`，只放公开 publishable key；严禁 service_role / secret key。Pages 使用 GitHub Actions 发布，工作流在 `.github/workflows/pages.yml`。
+GitHub 仓库 Variables 配置 `VITE_SUPABASE_URL`、`VITE_SUPABASE_PUBLISHABLE_KEY` 和 `VITE_SUPABASE_PROXY_URL`，只放公开 publishable key；严禁 service_role / secret key。生产检查要求HTTPS代理地址，避免后续发布漏配而恢复为手机直连。Pages 使用 GitHub Actions 发布，工作流在 `.github/workflows/pages.yml`。
 
 `npm run dev` 在5174端口提供开发预览；`npm run preview` 预览构建结果。
 
